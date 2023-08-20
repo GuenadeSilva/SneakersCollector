@@ -19,3 +19,6 @@
 
 # Go workspace file
 go.work
+
+# JSON file for the content pulled
+content.json
