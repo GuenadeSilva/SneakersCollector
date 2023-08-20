@@ -101,3 +101,60 @@ func RefreshScrapedData() {
 
 	log.Println("Scraped data refresh completed")
 }
+
+// GetSneakerData retrieves data from the sneaker_table
+func GetSneakerData() ([]scrapper.ShoeInfo, error) {
+	db, err := sql.Open("postgres", "postgres://user:password@localhost/sneaker_db?sslmode=disable")
+	if err != nil {
+		log.Printf("Error connecting to database: %v", err)
+		return nil, err
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SELECT name, price, link FROM sneaker_table")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var sneakers []scrapper.ShoeInfo
+	for rows.Next() {
+		var shoe scrapper.ShoeInfo
+		err := rows.Scan(&shoe.NAME, &shoe.PRICE, &shoe.LINK)
+		if err != nil {
+			return nil, err
+		}
+		sneakers = append(sneakers, shoe)
+	}
+
+	return sneakers, nil
+}
+
+// LogEntry represents a log entry in the log_table
+type LogEntry struct {
+	ID          int
+	Message     string
+	Timestamp   time.Time
+	Status      string
+	ElapsedTime time.Duration
+}
+
+// GetLatestLogEntry retrieves the latest log entry from the log_table
+func GetLatestLogEntry() (LogEntry, error) {
+	db, err := sql.Open("postgres", "postgres://user:password@localhost/sneaker_db?sslmode=disable")
+	if err != nil {
+		log.Printf("Error connecting to database: %v", err)
+		return LogEntry{}, err
+	}
+	defer db.Close()
+
+	row := db.QueryRow("SELECT id, message, timestamp, status, elapsed_time FROM log_table ORDER BY id DESC LIMIT 1")
+
+	var logEntry LogEntry
+	err = row.Scan(&logEntry.ID, &logEntry.Message, &logEntry.Timestamp, &logEntry.Status, &logEntry.ElapsedTime)
+	if err != nil {
+		return LogEntry{}, err
+	}
+
+	return logEntry, nil
+}
