@@ -12,7 +12,7 @@ import (
 )
 
 func RefreshScrapedData() {
-	db, err := sql.Open("postgres", "postgres://user:password@localhost/dbname?sslmode=disable")
+	db, err := sql.Open("postgres", "postgres://user:password@localhost/sneaker_db?sslmode=disable")
 	if err != nil {
 		log.Printf("Error connecting to database: %v", err)
 		return
@@ -38,7 +38,9 @@ func RefreshScrapedData() {
 	CREATE TABLE IF NOT EXISTS log_table (
 		id SERIAL PRIMARY KEY,
 		message TEXT,
-		timestamp TIMESTAMP
+		timestamp TIMESTAMP,
+		status TEXT,
+		elapsed_time INTERVAL
 	)
 `
 	_, err = db.Exec(createLogTableStmt)
@@ -64,8 +66,8 @@ func RefreshScrapedData() {
 		logMessage += "---------------------------\n"
 
 		// Insert the log into log_table
-		_, err = db.Exec("INSERT INTO log_table (message, timestamp) VALUES ($1, $2)",
-			logMessage, time.Now())
+		_, err = db.Exec("INSERT INTO log_table (message, timestamp, status, elapsed_time) VALUES ($1, $2, $3, $4)",
+			logMessage, time.Now(), status, elapsedTime)
 		if err != nil {
 			log.Printf("Error inserting log into log_table: %v", err)
 		}
