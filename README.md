@@ -81,9 +81,6 @@ To customize the API behavior, update the handlers in the main Go file (main.go)
 
 To change the database schema, update the SQL statements in the database package.
 
-Contributions
-Contributions are welcome! If you find a bug or have an enhancement in mind, feel free to create an issue or submit a pull request.
-
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
