@@ -18,3 +18,14 @@ services:
       PGADMIN_DEFAULT_PASSWORD: pgadminpassword
     ports:
       - "8080:80"
+
+  sneaker-app:  
+    build:
+      context: .  
+      dockerfile: Dockerfile  
+    ports:
+      - "8481:8481"  
+    volumes:
+      - .:/app  # Mount the current directory into the container's /app directory
+    depends_on:
+      - sneaker-db  
