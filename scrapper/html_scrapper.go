@@ -22,7 +22,7 @@ type WebsiteSelectors struct {
 var websiteSelectorsMap = map[string]WebsiteSelectors{
 	"Adidas": {
 		NameSelector:  ".glass-product-card__title",
-		PriceSelector: ".gl-price-item notranslate",
+		PriceSelector: ".gl-price-item",
 		LinkSelector:  "a[href]",
 		ItemSelector:  ".grid-item",
 		PageToScrape:  "https://www.adidas.pt/calcado-futebol%7Cmontanhismo-homem?price_max=387&price_min=50&sort=newest-to-oldest",
