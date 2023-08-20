@@ -45,7 +45,7 @@ In order to use the CI/CD Pipeline ensure you create:
    cd sneaker-collector
    ```
 
-Create a content.json file at the root of the project directory containing your initial sneaker data (if applicable).
+Create a content.json file at the root of the project directory containing your initial sneaker data (only applicable for Nike API).
 
 2. Open the docker-compose.yml file and update the environment variables for the sneaker-db service to match your desired PostgreSQL settings.
 
