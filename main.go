@@ -1,57 +1,53 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
+	//"encoding/json"
+	//"fmt"
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 
 	"sneakercollector/database"
 	sc "sneakercollector/scheduler"
 )
 
-func protectedHandler(w http.ResponseWriter, r *http.Request) {
-	// Parse the query parameters
-	query := r.URL.Query()
-	action := query.Get("action")
+func protectedHandler(c *gin.Context) {
+	action := c.Query("action")
 
 	switch action {
 	case "latest_run":
 		// Retrieve and return the latest log entry
 		logEntry, err := database.GetLatestLogEntry()
 		if err != nil {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 			return
 		}
-		json.NewEncoder(w).Encode(logEntry)
+		c.JSON(http.StatusOK, logEntry)
 
 	case "sneaker_db_data":
 		// Retrieve and return data from the sneaker_table
 		sneakerData, err := database.GetSneakerData()
 		if err != nil {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 			return
 		}
-		json.NewEncoder(w).Encode(sneakerData)
+		c.JSON(http.StatusOK, sneakerData)
 
 	case "refresh_data":
 		// Trigger the RefreshScrapedData function
 		database.RefreshScrapedData()
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "Data refresh initiated")
+		c.String(http.StatusOK, "Data refresh initiated")
 
 	default:
-		http.Error(w, "Invalid action", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid action"})
 		return
 	}
 }
 
 func main() {
-	r := mux.NewRouter()
-	r.HandleFunc("/protected", protectedHandler).Methods("GET")
-	sc.StartScheduler()
-	http.Handle("/", r)
-	http.ListenAndServe(":8481", nil)
+	r := gin.Default()
+	r.GET("/protected", protectedHandler)
+	go sc.StartScheduler() // Run the scheduler in a goroutine
+	r.Run(":8481")
 }
