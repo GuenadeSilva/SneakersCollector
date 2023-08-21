@@ -12,7 +12,7 @@ import (
 )
 
 func RefreshScrapedData() {
-	db, err := sql.Open("postgres", "postgres://user:password@localhost/sneaker_db?sslmode=disable")
+	db, err := sql.Open("postgres", "postgres://admin:1234@host.docker.internal/sneaker_db?sslmode=disable")
 	if err != nil {
 		log.Printf("Error connecting to database: %v", err)
 		return
@@ -104,7 +104,7 @@ func RefreshScrapedData() {
 
 // GetSneakerData retrieves data from the sneaker_table
 func GetSneakerData() ([]scrapper.ShoeInfo, error) {
-	db, err := sql.Open("postgres", "postgres://user:password@localhost/sneaker_db?sslmode=disable")
+	db, err := sql.Open("postgres", "postgres://admin:1234@host.docker.internal/sneaker_db?sslmode=disable")
 	if err != nil {
 		log.Printf("Error connecting to database: %v", err)
 		return nil, err
@@ -141,7 +141,7 @@ type LogEntry struct {
 
 // GetLatestLogEntry retrieves the latest log entry from the log_table
 func GetLatestLogEntry() (LogEntry, error) {
-	db, err := sql.Open("postgres", "postgres://user:password@localhost/sneaker_db?sslmode=disable")
+	db, err := sql.Open("postgres", "postgres://admin:1234@host.docker.internal/sneaker_db?sslmode=disable")
 	if err != nil {
 		log.Printf("Error connecting to database: %v", err)
 		return LogEntry{}, err

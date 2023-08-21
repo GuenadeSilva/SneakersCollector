@@ -1,21 +1,23 @@
 # Build stage
-FROM golang:1.2 AS builder
+FROM golang:1.20 AS builder
 
-# Set the working directory inside the container
-WORKDIR /app
+ARG VERSION=dev
 
-# Copy the Go app source code into the container
+WORKDIR /go/src/app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-#COPY datasets.json /app/datasets.json
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app main.go
 
-# Build the Go app
-RUN go build -o app main.go
+# Final stage
+FROM ubuntu:20.04
 
-# Set the command to run when the container starts
-CMD ["./app"]
+# Copy the datasets.json file from your local directory to the image
+COPY content.json /go/src/app/content.json
 
+WORKDIR /go/src/app
 
-
+COPY --from=builder /go/src/app/app /go/bin/app
+ENV PATH="/go/bin:${PATH}"
+CMD ["app"]
 
