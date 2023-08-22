@@ -11,14 +11,23 @@ import (
 	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
-func RefreshScrapedData() {
-	db, err := sql.Open("postgres", "postgres://admin:1234@host.docker.internal/sneaker_db?sslmode=disable")
-	if err != nil {
-		log.Printf("Error connecting to database: %v", err)
-		return
-	}
-	defer db.Close()
+var db *sql.DB // Global database connection
 
+func init() {
+	connStr := "postgres://admin:1234@host.docker.internal/sneaker_db?sslmode=disable"
+	var err error
+	db, err = sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatal("Error connecting to database:", err)
+	}
+
+	// Set connection pool settings if needed
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(5)
+	db.SetConnMaxLifetime(time.Hour)
+}
+
+func RefreshScrapedData() {
 	// Create the sneaker_table if it doesn't exist
 	createTableStmt := `
 		CREATE TABLE IF NOT EXISTS sneaker_table (
@@ -28,7 +37,7 @@ func RefreshScrapedData() {
 			link TEXT
 		)
 	`
-	_, err = db.Exec(createTableStmt)
+	_, err := db.Exec(createTableStmt)
 	if err != nil {
 		log.Printf("Failed to create table: %v", err)
 		return
@@ -66,7 +75,7 @@ func RefreshScrapedData() {
 		logMessage += "---------------------------\n"
 
 		// Insert the log into log_table
-		_, err = db.Exec("INSERT INTO log_table (message, timestamp, status, elapsed_time) VALUES ($1, $2, $3, $4)",
+		_, err := db.Exec("INSERT INTO log_table (message, timestamp, status, elapsed_time) VALUES ($1, $2, $3, $4)",
 			logMessage, time.Now(), status, elapsedTime)
 		if err != nil {
 			log.Printf("Error inserting log into log_table: %v", err)
@@ -84,7 +93,7 @@ func RefreshScrapedData() {
 		}
 		rowsInserted := 0
 		for _, shoe := range shoes {
-			_, err = db.Exec("INSERT INTO sneaker_table (name, price, link) VALUES ($1, $2, $3)",
+			_, err := db.Exec("INSERT INTO sneaker_table (name, price, link) VALUES ($1, $2, $3)",
 				shoe.NAME, shoe.PRICE, shoe.LINK)
 			if err == nil {
 				rowsInserted++
@@ -104,15 +113,9 @@ func RefreshScrapedData() {
 
 // GetSneakerData retrieves data from the sneaker_table
 func GetSneakerData() ([]scrapper.ShoeInfo, error) {
-	db, err := sql.Open("postgres", "postgres://admin:1234@host.docker.internal/sneaker_db?sslmode=disable")
-	if err != nil {
-		log.Printf("Error connecting to database: %v", err)
-		return nil, err
-	}
-	defer db.Close()
-
 	rows, err := db.Query("SELECT name, price, link FROM sneaker_table")
 	if err != nil {
+		log.Printf("Error querying database: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -122,6 +125,7 @@ func GetSneakerData() ([]scrapper.ShoeInfo, error) {
 		var shoe scrapper.ShoeInfo
 		err := rows.Scan(&shoe.NAME, &shoe.PRICE, &shoe.LINK)
 		if err != nil {
+			log.Printf("Error scanning row: %v", err)
 			return nil, err
 		}
 		sneakers = append(sneakers, shoe)
@@ -141,18 +145,12 @@ type LogEntry struct {
 
 // GetLatestLogEntry retrieves the latest log entry from the log_table
 func GetLatestLogEntry() (LogEntry, error) {
-	db, err := sql.Open("postgres", "postgres://admin:1234@host.docker.internal/sneaker_db?sslmode=disable")
-	if err != nil {
-		log.Printf("Error connecting to database: %v", err)
-		return LogEntry{}, err
-	}
-	defer db.Close()
-
 	row := db.QueryRow("SELECT id, message, timestamp, status, elapsed_time FROM log_table ORDER BY id DESC LIMIT 1")
 
 	var logEntry LogEntry
-	err = row.Scan(&logEntry.ID, &logEntry.Message, &logEntry.Timestamp, &logEntry.Status, &logEntry.ElapsedTime)
+	err := row.Scan(&logEntry.ID, &logEntry.Message, &logEntry.Timestamp, &logEntry.Status, &logEntry.ElapsedTime)
 	if err != nil {
+		log.Printf("Error querying log entry: %v", err)
 		return LogEntry{}, err
 	}
 
