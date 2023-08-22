@@ -1,12 +1,9 @@
-version: '3'
 services:
-  sneaker-app:  
+  app:
     build:
-      context: .  
-      dockerfile: Dockerfile  
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "8481:8481"  
+      - "8482:8482" 
     volumes:
-      - .:/app  # Mount the current directory into the container's /app directory
-    depends_on:
-      - sneaker-db  
+      - .:/app  
