@@ -24,7 +24,7 @@ Data collected currently includes:
 
 - Docker and Docker Compose
 - Go 1.20+
-- DockerHub Account
+- Postgres and PgAdmin
 
 ## Getting Started
 
@@ -37,7 +37,7 @@ Data collected currently includes:
 
 Create a content.json file at the root of the project directory containing your initial sneaker data (only applicable for Nike API).
 
-2. Open the docker-compose.yml file and update the environment variables for the sneaker-db service to match your desired PostgreSQL settings.
+2. Open the [docker-compose](docker-compose.yml) file and update the environment variables for the sneaker-db service to match your desired PostgreSQL settings.
 
 3. Build and start the containers using Docker Compose:
 
@@ -45,9 +45,19 @@ Create a content.json file at the root of the project directory containing your 
    docker-compose up --build
    ```
 
-This will start the PostgreSQL database, pgAdmin for managing the database, and the Sneaker Collector App.
+This will start the PostgreSQL database, pgAdmin for managing the database.
 
-Access the Sneaker Collector App API by opening a web browser or using a tool like curl:
+4. Build the sneaker app:
+
+   ```sh
+   go build
+   ```
+
+This will build you Sneaker app then you open it.
+
+5. The app will propmpt you to input the user, password and host.You have 2 tries before the app exits.
+
+6. Access the Sneaker Collector App API by opening a web browser or using a tool like curl:
 
 To get Shoes for a selected brand:
 
@@ -61,15 +71,15 @@ To trigger data refresh:
 
     http://localhost:port/protected?action=refresh_data
 
-Access the pgAdmin web interface by navigating to http://localhost:8080 in your browser. Log in using the credentials defined in the docker-compose.yml file.
+Access the pgAdmin web interface by navigating to http://localhost:8080 in your browser. Log in using the credentials defined in the [docker-compose](docker-compose.yml) file.
 
 ## Customization
 
 To modify the scraping logic and data sources, update the appropriate functions in the scrapper package.
 
-To customize the API behavior, update the handlers in the main Go file (main.go).
+To customize the API behavior, update the handlers in the [main](main.go) Go file.
 
-To change the database schema, update the SQL statements in the database package.
+To change the database schema, update the SQL statements in the database module.
 
 ## License
 
