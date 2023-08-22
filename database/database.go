@@ -36,16 +36,27 @@ func SetupDB(username, password, host string) error {
 }
 
 func RefreshScrapedData() {
-	// Create the sneaker_table if it doesn't exist
+	// Drop the sneaker_table if it exists
+	dropTableStmt := `
+		DROP TABLE IF EXISTS sneaker_table
+	`
+	_, err := db.Exec(dropTableStmt)
+	if err != nil {
+		log.Printf("Failed to drop table: %v", err)
+		return
+	}
+
+	// Create the sneaker_table
 	createTableStmt := `
 		CREATE TABLE IF NOT EXISTS sneaker_table (
 			id SERIAL PRIMARY KEY,
 			name TEXT,
 			price TEXT,
-			link TEXT
+			link TEXT,
+			brand TEXT
 		)
 	`
-	_, err := db.Exec(createTableStmt)
+	_, err = db.Exec(createTableStmt)
 	if err != nil {
 		log.Printf("Failed to create table: %v", err)
 		return
@@ -101,8 +112,8 @@ func RefreshScrapedData() {
 		}
 		rowsInserted := 0
 		for _, shoe := range shoes {
-			_, err := db.Exec("INSERT INTO sneaker_table (name, price, link) VALUES ($1, $2, $3)",
-				shoe.NAME, shoe.PRICE, shoe.LINK)
+			_, err := db.Exec("INSERT INTO sneaker_table (name, price, link, brand) VALUES ($1, $2, $3, $4)",
+				shoe.NAME, shoe.PRICE, shoe.LINK, brand)
 			if err == nil {
 				rowsInserted++
 			}
@@ -142,25 +153,25 @@ func GetSneakerData() ([]scrapper.ShoeInfo, error) {
 	return sneakers, nil
 }
 
-// LogEntry represents a log entry in the log_table
-type LogEntry struct {
-	ID          int
-	Message     string
-	Timestamp   time.Time
-	Status      string
-	ElapsedTime time.Duration
-}
-
-// GetLatestLogEntry retrieves the latest log entry from the log_table
-func GetLatestLogEntry() (LogEntry, error) {
-	row := db.QueryRow("SELECT id, message, timestamp, status, elapsed_time FROM log_table ORDER BY id DESC LIMIT 1")
-
-	var logEntry LogEntry
-	err := row.Scan(&logEntry.ID, &logEntry.Message, &logEntry.Timestamp, &logEntry.Status, &logEntry.ElapsedTime)
+// GetLatestShoesForBrand retrieves the latest scraped shoes for a specific brand
+func GetLatestShoesForBrand(brand string) ([]scrapper.ShoeInfo, error) {
+	rows, err := db.Query("SELECT name, price, link FROM sneaker_table WHERE brand=$1 ORDER BY id DESC", brand)
 	if err != nil {
-		log.Printf("Error querying log entry: %v", err)
-		return LogEntry{}, err
+		log.Printf("Error querying database: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var shoes []scrapper.ShoeInfo
+	for rows.Next() {
+		var shoe scrapper.ShoeInfo
+		err := rows.Scan(&shoe.NAME, &shoe.PRICE, &shoe.LINK)
+		if err != nil {
+			log.Printf("Error scanning row: %v", err)
+			return nil, err
+		}
+		shoes = append(shoes, shoe)
 	}
 
-	return logEntry, nil
+	return shoes, nil
 }

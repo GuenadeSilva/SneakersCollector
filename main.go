@@ -18,14 +18,20 @@ func protectedHandler(c *gin.Context) {
 	action := c.Query("action")
 
 	switch action {
-	case "latest_run":
-		// Retrieve and return the latest log entry
-		logEntry, err := database.GetLatestLogEntry()
+	case "latest_shoes":
+		brand := c.Query("brand")
+		if brand == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Brand parameter is missing"})
+			return
+		}
+
+		// Retrieve and return data from the sneaker_table for the selected brand
+		latestShoes, err := database.GetLatestShoesForBrand(brand)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 			return
 		}
-		c.JSON(http.StatusOK, logEntry)
+		c.JSON(http.StatusOK, latestShoes)
 
 	case "sneaker_db_data":
 		// Retrieve and return data from the sneaker_table

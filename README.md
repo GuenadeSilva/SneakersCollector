@@ -11,6 +11,7 @@ Data collected currently includes:
 - Name
 - Price
 - Link
+- Brand
 
 ## Table of Contents
 
@@ -48,17 +49,17 @@ This will start the PostgreSQL database, pgAdmin for managing the database, and 
 
 Access the Sneaker Collector App API by opening a web browser or using a tool like curl:
 
-To get the latest log entry:
+To get Shoes for a selected brand:
 
-    http://localhost:8481/protected?action=latest_run
+    http://localhost:port/protected?action=latest_shoes&brand=selected_brand
 
 To get sneaker data:
 
-    http://localhost:8481/protected?action=sneaker_db_data
+    http://localhost:port/protected?action=sneaker_db_data
 
 To trigger data refresh:
 
-    http://localhost:8481/protected?action=refresh_data
+    http://localhost:port/protected?action=refresh_data
 
 Access the pgAdmin web interface by navigating to http://localhost:8080 in your browser. Log in using the credentials defined in the docker-compose.yml file.
 
