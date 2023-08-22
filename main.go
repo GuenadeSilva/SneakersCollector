@@ -3,6 +3,8 @@ package main
 import (
 	//"encoding/json"
 	//"fmt"
+	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -45,9 +47,37 @@ func protectedHandler(c *gin.Context) {
 	}
 }
 
+func getUserInput(prompt string) string {
+	var input string
+	fmt.Print(prompt)
+	fmt.Scanln(&input)
+	return input
+}
+
 func main() {
+	maxRetries := 2
+
+	for maxRetries > 0 {
+		username := getUserInput("Enter database username: ")
+		password := getUserInput("Enter database password: ")
+		host := getUserInput("Enter database host: ")
+
+		err := database.SetupDB(username, password, host)
+		if err != nil {
+			maxRetries--
+			fmt.Printf("Error connecting to database: %v\n", err)
+			fmt.Printf("Retries left: %d\n", maxRetries)
+			if maxRetries == 0 {
+				log.Fatal("Failed to establish database connection")
+			}
+		} else {
+			// Successfully connected
+			break
+		}
+	}
+
 	r := gin.Default()
 	r.GET("/protected", protectedHandler)
 	go sc.StartScheduler() // Run the scheduler in a goroutine
-	r.Run(":8481")
+	r.Run(":8482")
 }

@@ -13,18 +13,26 @@ import (
 
 var db *sql.DB // Global database connection
 
-func init() {
-	connStr := "postgres://admin:1234@host.docker.internal/sneaker_db?sslmode=disable"
+func SetupDB(username, password, host string) error {
+	connStr := fmt.Sprintf("postgres://%s:%s@%s/sneaker_db?sslmode=disable", username, password, host)
 	var err error
 	db, err = sql.Open("postgres", connStr)
 	if err != nil {
-		log.Fatal("Error connecting to database:", err)
+		return err
 	}
 
 	// Set connection pool settings if needed
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(time.Hour)
+
+	// Test the database connection
+	err = db.Ping()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func RefreshScrapedData() {

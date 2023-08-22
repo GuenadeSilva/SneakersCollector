@@ -15,7 +15,6 @@ Data collected currently includes:
 ## Table of Contents
 
 - [Requirements](#requirements)
-- [Configuration](#configuration)
 - [Getting Started](#gettingstarted)
 - [Customization](#customization)
 - [License](#license)
@@ -23,18 +22,8 @@ Data collected currently includes:
 ## Requirements
 
 - Docker and Docker Compose
-- Go 1.17+
+- Go 1.20+
 - DockerHub Account
-- Github Actions
-
-## Configuration
-
-In order to use the CI/CD Pipeline ensure you create:
-
-1. [DockerHub Account](https://hub.docker.com/)
-2. Create Personal Access Token
-3. Add them to the Repo's Secrets
-4. Change the push.yaml file to match the PAT names
 
 ## Getting Started
 
