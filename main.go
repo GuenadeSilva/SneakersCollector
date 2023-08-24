@@ -1,16 +1,9 @@
 package main
 
 import (
-	//"encoding/json"
-	"fmt"
 	_ "log"
 	"net/http"
 	_ "os"
-	"os/exec"
-	"runtime"
-	"time"
-
-	"html/template"
 
 	"github.com/gin-contrib/cors"
 
@@ -20,98 +13,6 @@ import (
 	"sneakercollector/database"
 	sc "sneakercollector/scheduler"
 )
-
-const formTemplate = `
-<!DOCTYPE html>
-<html>
-<head>
-	<title>Database Connection</title>
-</head>
-<body>
-	<h1>Database Connection Details</h1>
-	<form action="/connect" method="post">
-		<label for="username">Username:</label>
-		<input type="text" id="username" name="username"><br><br>
-
-		<label for="password">Password:</label>
-		<input type="password" id="password" name="password"><br><br>
-
-		<label for="host">Host:</label>
-		<input type="text" id="host" name="host"><br><br>
-
-		<input type="submit" value="Connect">
-	</form>
-</body>
-</html>
-`
-
-const optionsTemplate = `
-<!DOCTYPE html>
-<html>
-<head>
-	<title>Options</title>
-</head>
-<body>
-	<h1>Menu</h1>
-	<ul>
-		<li><a href="/view-all-data">Shoe table</a></li>
-		<li><a href="/protected?action=refresh_data">Refresh data</a></li>
-		<li>View latest shoes by brand:
-			<ul>
-				<li><a href="/protected?action=latest_shoes&brand=Nike">Nike</a></li>
-				<li><a href="/protected?action=latest_shoes&brand=Adidas">Adidas</a></li>
-				<li><a href="/protected?action=latest_shoes&brand=New%20Balance">New Balance</a></li>
-			</ul>
-		</li>
-	</ul>
-</body>
-</html>
-`
-
-const dataTableTemplate = `
-<!DOCTYPE html>
-<html>
-<head>
-	<title>All Data</title>
-	<style>
-		table {
-			border-collapse: collapse;
-			width: 100%;
-		}
-		th, td {
-			border: 1px solid black;
-			padding: 8px;
-			text-align: left;
-		}
-	</style>
-</head>
-<body>
-	<h1>All Data</h1>
-	<a href="/options">Return to Options</a>
-	<table>
-		<thead>
-			<tr>
-				<th>Name</th>
-				<th>Price</th>
-				<th>Link</th>
-				<!-- Add more columns as needed -->
-			</tr>
-		</thead>
-		<tbody>
-			{{ range . }}
-				<tr>
-					<td>{{ .NAME }}</td>
-					<td>{{ .PRICE }}</td>
-					<td>{{ .LINK }}</td>
-					<!-- Add more columns as needed -->
-				</tr>
-			{{ end }}
-		</tbody>
-	</table>
-</body>
-</html>
-
-`
 
 func protectedHandler(c *gin.Context) {
 	action := c.Query("action")
@@ -165,24 +66,26 @@ func main() {
 	// Use the CORS middleware
 	r.Use(cors.New(config))
 
-	r.GET("/connect-form", func(c *gin.Context) {
-		tmpl, err := template.New("form").Parse(formTemplate)
-		if err != nil {
-			c.String(http.StatusInternalServerError, "Error rendering form")
-			return
-		}
-		tmpl.Execute(c.Writer, nil)
-	})
-
 	r.POST("/connect", func(c *gin.Context) {
 		if maxRetries <= 0 {
 			c.String(http.StatusForbidden, "Maximum retries exceeded")
 			return
 		}
 
-		username := c.PostForm("username")
-		password := c.PostForm("password")
-		host := c.PostForm("host")
+		var loginInfo struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+			Host     string `json:"host"`
+		}
+
+		if err := c.BindJSON(&loginInfo); err != nil {
+			c.String(http.StatusBadRequest, "Invalid JSON")
+			return
+		}
+
+		username := loginInfo.Username
+		password := loginInfo.Password
+		host := loginInfo.Host
 
 		err := database.SetupDB(username, password, host)
 		if err != nil {
@@ -192,33 +95,7 @@ func main() {
 		}
 
 		maxRetries = 2
-		c.Redirect(http.StatusSeeOther, "/options")
-	})
-
-	r.GET("/options", func(c *gin.Context) {
-		tmpl, err := template.New("options").Parse(optionsTemplate)
-		if err != nil {
-			c.String(http.StatusInternalServerError, "Error rendering options page")
-			return
-		}
-		tmpl.Execute(c.Writer, nil)
-	})
-
-	r.GET("/view-all-data", func(c *gin.Context) {
-		// Retrieve and return all data from the sneaker_table
-		allData, err := database.GetSneakerData()
-		if err != nil {
-			c.String(http.StatusInternalServerError, "Error retrieving data from the database")
-			return
-		}
-
-		// Render the data table template with the retrieved data
-		tmpl, err := template.New("datatable").Parse(dataTableTemplate)
-		if err != nil {
-			c.String(http.StatusInternalServerError, "Error rendering data table")
-			return
-		}
-		tmpl.Execute(c.Writer, allData)
+		c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
 	})
 
 	r.GET("/protected", protectedHandler)
@@ -227,34 +104,4 @@ func main() {
 
 	// Start the server in a goroutine
 	r.Run(":8483")
-
-	// Wait for a short time to ensure the server has started
-	// before attempting to open the browser
-	time.Sleep(time.Second * 2)
-
-	// Open the connect-form URL in the default browser
-	openBrowser("http://localhost:8483/connect-form")
-}
-
-func openBrowser(url string) {
-	var cmd *exec.Cmd
-
-	switch runtime.GOOS {
-	case "linux":
-		fmt.Println("Opening browser on Linux:", url)
-		cmd = exec.Command("xdg-open", url)
-	case "darwin":
-		fmt.Println("Opening browser on macOS:", url)
-		cmd = exec.Command("open", url)
-	case "windows":
-		fmt.Println("Opening browser on Windows:", url)
-		cmd = exec.Command("cmd", "/c", "start", url)
-	default:
-		fmt.Println("Unsupported operating system")
-		return
-	}
-
-	if err := cmd.Start(); err != nil {
-		fmt.Println("Failed to open browser:", err)
-	}
 }

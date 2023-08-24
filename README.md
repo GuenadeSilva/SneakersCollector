@@ -32,7 +32,7 @@ To build this I build a Go app with an API that pulls data from sneakers website
 
 Once the data is pulled it stores the data directly to the database. This operation is automated by a cron job which you can select the frequency [here](scheduler/scheduler.go).
 
-The React app interacts with the data through the API so it pull the data and displays it via an interactive table
+The React app interacts with the data through the API so it pull the data and displays it via an interactive table. To access it you simply start the rect app using **npm start** and it'll prompt you a login page where you introduce you database host and credentials.
 
 ## Requirements
 
