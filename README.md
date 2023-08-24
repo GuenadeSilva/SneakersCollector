@@ -23,7 +23,7 @@ Data collected currently includes:
 
 ## Design
 
-![design](design.png)
+![design](design_logic.png)
 
 To build this I build a Go app with an API that pulls data from sneakers websites and stores then in a Postgres DB. There are 2 ways I pulled data:
 
