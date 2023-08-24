@@ -5,7 +5,7 @@ import (
 	"fmt"
 	_ "log"
 	"net/http"
-	"os"
+	_ "os"
 	"os/exec"
 	"runtime"
 	"time"
@@ -164,8 +164,8 @@ func main() {
 	})
 
 	r.POST("/connect", func(c *gin.Context) {
-		if maxRetries > 0 {
-			c.Redirect(http.StatusSeeOther, "/connect-form") // Redirect to the form page
+		if maxRetries <= 0 {
+			c.String(http.StatusForbidden, "Maximum retries exceeded")
 			return
 		}
 
@@ -176,18 +176,21 @@ func main() {
 		err := database.SetupDB(username, password, host)
 		if err != nil {
 			maxRetries--
-			retryMessage := fmt.Sprintf("Error connecting to the database. Retries left: %d", maxRetries)
-			c.String(http.StatusInternalServerError, retryMessage)
-			if maxRetries == 0 {
-				c.String(http.StatusInternalServerError, "Maximum retries exceeded")
-				os.Exit(1)
-				//c.Redirect(http.StatusSeeOther, "/connect-form") // Redirect to the form page
-			}
+			c.String(http.StatusInternalServerError, "Error connecting to the database")
 			return
 		}
 
 		maxRetries = 2
 		c.Redirect(http.StatusSeeOther, "/options")
+	})
+
+	r.GET("/options", func(c *gin.Context) {
+		tmpl, err := template.New("options").Parse(optionsTemplate)
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Error rendering options page")
+			return
+		}
+		tmpl.Execute(c.Writer, nil)
 	})
 
 	r.GET("/view-all-data", func(c *gin.Context) {
@@ -212,9 +215,7 @@ func main() {
 	go sc.StartScheduler()
 
 	// Start the server in a goroutine
-	go func() {
-		r.Run(":8483")
-	}()
+	r.Run(":8483")
 
 	// Wait for a short time to ensure the server has started
 	// before attempting to open the browser
@@ -222,9 +223,6 @@ func main() {
 
 	// Open the connect-form URL in the default browser
 	openBrowser("http://localhost:8483/connect-form")
-
-	// Keep the main function running
-	select {}
 }
 
 func openBrowser(url string) {
@@ -232,10 +230,13 @@ func openBrowser(url string) {
 
 	switch runtime.GOOS {
 	case "linux":
+		fmt.Println("Opening browser on Linux:", url)
 		cmd = exec.Command("xdg-open", url)
 	case "darwin":
+		fmt.Println("Opening browser on macOS:", url)
 		cmd = exec.Command("open", url)
 	case "windows":
+		fmt.Println("Opening browser on Windows:", url)
 		cmd = exec.Command("cmd", "/c", "start", url)
 	default:
 		fmt.Println("Unsupported operating system")
