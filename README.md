@@ -1,6 +1,6 @@
 # Sneaker Collector App
 
-The Sneaker Collector App is a Go application that scrapes sneaker information from various websites and stores the data in a PostgreSQL database. It also provides a simple API to retrieve the collected data and log entries. The brands included are:
+The Sneaker Collector App is a Go application that scrapes sneaker information from various websites and stores the data in a PostgreSQL database. It also provides a simple API to retrieve the collected data and log entries and uses a React app to view the sneakers on the browser. The brands included are:
 
 - Nike
 - Adidas
@@ -15,16 +15,31 @@ Data collected currently includes:
 
 ## Table of Contents
 
+- [Design](#design)
 - [Requirements](#requirements)
 - [Getting Started](#gettingstarted)
 - [Customization](#customization)
 - [License](#license)
+
+## Design
+
+![design](design.png)
+
+To build this I build a Go app with an API that pulls data from sneakers websites and stores then in a Postgres DB. There are 2 ways I pulled data:
+
+- The [Nike](scrapper/nike.go) website is doing requests directly from the API so I simple made the request to get the JSON.
+- For [Adidas and New Balance](scrapper/html_scrapper.go) I scrapped direcyl from the HTML. Since the format for both is similar I iterated through a map for both so it'd be simpler.
+
+Once the data is pulled it stores the data directly to the database. This operation is automated by a cron job which you can select the frequency [here](scheduler/scheduler.go).
+
+The React app interacts with the data through the API so it pull the data and displays it via an interactive table
 
 ## Requirements
 
 - Docker and Docker Compose
 - Go 1.20+
 - Postgres and PgAdmin
+- React
 
 ## Getting Started
 

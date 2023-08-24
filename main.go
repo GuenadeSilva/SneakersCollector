@@ -12,6 +12,8 @@ import (
 
 	"html/template"
 
+	"github.com/gin-contrib/cors"
+
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 
@@ -50,9 +52,9 @@ const optionsTemplate = `
 	<title>Options</title>
 </head>
 <body>
-	<h1>Select an Option</h1>
+	<h1>Menu</h1>
 	<ul>
-		<li><a href="/protected?action=sneaker_db_data">View all data as a table</a></li>
+		<li><a href="/view-all-data">Shoe table</a></li>
 		<li><a href="/protected?action=refresh_data">Refresh data</a></li>
 		<li>View latest shoes by brand:
 			<ul>
@@ -64,7 +66,6 @@ const optionsTemplate = `
 	</ul>
 </body>
 </html>
-
 `
 
 const dataTableTemplate = `
@@ -86,21 +87,22 @@ const dataTableTemplate = `
 </head>
 <body>
 	<h1>All Data</h1>
+	<a href="/options">Return to Options</a>
 	<table>
 		<thead>
 			<tr>
-				<th>ID</th>
 				<th>Name</th>
-				<th>Brand</th>
+				<th>Price</th>
+				<th>Link</th>
 				<!-- Add more columns as needed -->
 			</tr>
 		</thead>
 		<tbody>
 			{{ range . }}
 				<tr>
-					<td>{{ .ID }}</td>
 					<td>{{ .NAME }}</td>
-					<td>{{ .BRAND }}</td>
+					<td>{{ .PRICE }}</td>
+					<td>{{ .LINK }}</td>
 					<!-- Add more columns as needed -->
 				</tr>
 			{{ end }}
@@ -108,6 +110,7 @@ const dataTableTemplate = `
 	</table>
 </body>
 </html>
+
 `
 
 func protectedHandler(c *gin.Context) {
@@ -153,6 +156,14 @@ func main() {
 	maxRetries := 2
 
 	r := gin.Default()
+
+	// Set up CORS middleware
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"http://localhost:3000"} // Add the URL of your React app
+	config.AllowHeaders = []string{"Origin", "Content-Type"}
+
+	// Use the CORS middleware
+	r.Use(cors.New(config))
 
 	r.GET("/connect-form", func(c *gin.Context) {
 		tmpl, err := template.New("form").Parse(formTemplate)

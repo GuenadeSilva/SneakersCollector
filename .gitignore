@@ -23,9 +23,6 @@ go.work
 # JSON file for the content pulled
 content.json
 
-#vite-project
-vite-project/
-
 # Random File
 .DS_store
 sneakercollector
